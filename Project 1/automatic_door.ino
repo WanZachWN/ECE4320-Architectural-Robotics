@@ -72,6 +72,7 @@ void loop() {
   button_state = digitalRead(PUSHBUTTON_PIN_2);
   door_state = servo9g.read(); 
   
+  //open door
   if((cm <= 5) || (button_state == HIGH) && (door_state == servo9gRestPosition))
   {
     last_button_state = button_state;
@@ -87,11 +88,13 @@ void loop() {
     delay(8000);
 
   }
+  //someone by the door, extend time
   else if(((cm <= 15) || (button_state == HIGH)) && (door_state == servo9gTargetPosition) )
   {
     Serial.println("delay");
     delay(8000);
   }
+  //close door
   else if (((cm > 15) || (last_button_state == HIGH)) && (door_state == servo9gTargetPosition))
   {
     for(int i = servo9gTargetPosition; i >= servo9gRestPosition; i -= 5)
@@ -105,6 +108,19 @@ void loop() {
       digitalWrite(RGBLED_PIN_G, 0);
       digitalWrite(RGBLED_PIN_B, 0);
       delay(100);
+      digitalWrite(HCSR04_PIN_TRIG, LOW);
+      delayMicroseconds(2);
+      digitalWrite(HCSR04_PIN_TRIG, HIGH);
+      delayMicroseconds(10);
+      digitalWrite(HCSR04_PIN_TRIG, LOW);
+      duration = pulseIn(HCSR04_PIN_ECHO, HIGH);
+      cm = microsecondsToCentimeters(duration);
+      Serial.print("cm: ");
+      Serial.println(cm);
+      if(cm <= 5)
+      {
+        break;
+      }
     }
   }
   
