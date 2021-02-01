@@ -18,13 +18,12 @@ const int servo9gTargetPosition = 155; //Position when event is detected
 int button_state = 0;
 int last_button_state = 0;
 int door_state = 0;
-long duration;
-long cm = 0;
+long duration, cm;
 Servo servo9g;
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);
+  
   //servo
   servo9g.attach(SERVO9G_PIN_SIG);
   servo9g.write(servo9gRestPosition);
@@ -37,9 +36,24 @@ void setup() {
   //Ultrasonic Sensor
   pinMode(HCSR04_PIN_TRIG, OUTPUT);
   pinMode(HCSR04_PIN_ECHO, INPUT);
+  
+  Serial.begin(9600);
   digitalWrite(RGBLED_PIN_R, 255);
   digitalWrite(RGBLED_PIN_G, 0);
   digitalWrite(RGBLED_PIN_B, 0);
+  
+  door_state = servo9g.read();
+  if(door_state != servo9gRestPosition)
+  {
+    for(int i = door_state; i >= servo9gRestPosition; i -= 5)
+    {
+      servo9g.write(i);
+      delay(100);
+      Serial.print("door_state: ");
+      Serial.println(i);
+    }
+  }
+  
 }
 
 void loop() {
@@ -52,14 +66,13 @@ void loop() {
   digitalWrite(HCSR04_PIN_TRIG, LOW);
   duration = pulseIn(HCSR04_PIN_ECHO, HIGH);
   cm = microsecondsToCentimeters(duration);
-  Serial.print(cm);
-  Serial.println();
-  Serial.println("main");
+  Serial.print("cm: ");
+  Serial.println(cm);
   
   button_state = digitalRead(PUSHBUTTON_PIN_2);
   door_state = servo9g.read(); 
   
-  if((cm < 50) || (button_state == HIGH) && (door_state == servo9gRestPosition))
+  if((cm <= 5) || (button_state == HIGH) && (door_state == servo9gRestPosition))
   {
     last_button_state = button_state;
     digitalWrite(RGBLED_PIN_R, 0);
@@ -71,29 +84,16 @@ void loop() {
       servo9g.write(i);
       delay(100);
     }
-    door_state = servo9g.read();
-    Serial.println(door_state);
-    while((cm <= 100) || (button_state == HIGH))
-    {
-      Serial.println("delay");
-      delay(8000);
-      
-      digitalWrite(HCSR04_PIN_TRIG, LOW);
-      delayMicroseconds(2);
-      digitalWrite(HCSR04_PIN_TRIG, HIGH);
-      delayMicroseconds(10);
-      digitalWrite(HCSR04_PIN_TRIG, LOW);
-      duration = pulseIn(HCSR04_PIN_ECHO, HIGH);
-      cm = microsecondsToCentimeters(duration);
-      Serial.print(cm);
-      Serial.println();
-
-      button_state = digitalRead(PUSHBUTTON_PIN_2);
-    }
+    delay(8000);
 
   }
-  else if (((cm > 100) || (last_button_state == HIGH)) && (door_state == servo9gTargetPosition))
-  {Serial.println("loop");
+  else if(((cm <= 15) || (button_state == HIGH)) && (door_state == servo9gTargetPosition) )
+  {
+    Serial.println("delay");
+    delay(8000);
+  }
+  else if (((cm > 15) || (last_button_state == HIGH)) && (door_state == servo9gTargetPosition))
+  {
     for(int i = servo9gTargetPosition; i >= servo9gRestPosition; i -= 5)
     {
       servo9g.write(i);
@@ -106,8 +106,6 @@ void loop() {
       digitalWrite(RGBLED_PIN_B, 0);
       delay(100);
     }
-    
-    Serial.println(door_state);
   }
   
 }
