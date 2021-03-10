@@ -1,22 +1,29 @@
+#include <FastLED.h>
+
 #include "Arduino.h"
 #include "SD.h"
 #include "TMRpcm.h"
 #include "SPI.h"
+//#include "HX711.h
 
-#define RGBLED_PIN_B  2       //Blue pin of the RGB LED
-#define RGBLED_PIN_G  3       //Green pin of the RGB LED
-#define RGBLED_PIN_R  4       //Red pin of the RGB LED
+#define LED_STRIP_PIN  2       //Blue pin of the RGB LED
+#define LOADCELL_DOUT_PIN  3
+#define LOADCELL_SCK_PIN  4
 #define SD_ChipSelectPin 5
 
+#define NUM_LEDS 40
+
+CRGB leds[NUM_LEDS];
 TMRpcm tmrpcm;
 int i;
+uint8_t hue = 0;
 
 void setup() {
   // put your setup code here, to run once:
-  //RGB LED
-  pinMode(RGBLED_PIN_R, OUTPUT);
-  pinMode(RGBLED_PIN_G, OUTPUT);
-  pinMode(RGBLED_PIN_B, OUTPUT);
+  //LED
+  Serial.println("resetting");
+  LEDS.addLeds<WS2812,LED_STRIP_PIN,RGB>(leds,NUM_LEDS);
+  LEDS.setBrightness(84);
 
   tmrpcm.speakerPin = 9;
   Serial.begin(9600);
@@ -28,32 +35,52 @@ void setup() {
   
 }
 
+void fadeall() { for(int i = 0; i < NUM_LEDS; i++) { leds[i].nscale8(250); } }
+
 void loop() {
   // put your main code here, to run repeatedly:
-  i = Serial.read();
+  if(Serial.available() > 0)
+  {
+    i = Serial.read();
+    Serial.print("I received: ");
+    Serial.println(i);
+  }
   if(i == 1)
   {
-    //LED turns to green
-    digitalWrite(RGBLED_PIN_R, 0);
-    digitalWrite(RGBLED_PIN_G, 255);
-    digitalWrite(RGBLED_PIN_B, 0);
-    delay(100);
-    digitalWrite(RGBLED_PIN_R, 0);
-    digitalWrite(RGBLED_PIN_G, 0);
-    digitalWrite(RGBLED_PIN_B, 255);
-    delay(100);
-    digitalWrite(RGBLED_PIN_R, 255);
-    digitalWrite(RGBLED_PIN_G, 0);
-    digitalWrite(RGBLED_PIN_B, 0);
-    delay(100);
-    digitalWrite(RGBLED_PIN_R, 0);
-    digitalWrite(RGBLED_PIN_G, 255);
-    digitalWrite(RGBLED_PIN_B, 255);
-    delay(100);
+    for(int i = 0; i < NUM_LEDS; i++) {
+      // Set the i'th led to red 
+      leds[i] = CHSV(hue++, 255, 255);
+      // Show the leds
+      FastLED.show(); 
+      // now that we've shown the leds, reset the i'th led to black
+      // leds[i] = CRGB::Black;
+      fadeall();
+      // Wait a little bit before we loop around and do it again
+      delay(70);
+    }
+    for(int i = (NUM_LEDS)-1; i >= 0; i--) {
+      // Set the i'th led to red 
+      leds[i] = CHSV(hue++, 255, 255);
+      // Show the leds
+      FastLED.show();
+      // now that we've shown the leds, reset the i'th led to black
+      // leds[i] = CRGB::Black;
+      fadeall();
+      // Wait a little bit before we loop around and do it again
+      delay(70);
+    }
+    
   }
   else if(i == 2)
   {
     tmrpcm.setVolume(6);
     tmrpcm.play("**.wav");
+  }
+  else if(i == 3)
+  {
+    Serial.print("Reading: ");
+    Serial.print(scale.get_units(), 1); //scale.get_units() returns a float
+    Serial.print(" lbs"); //You can change this to kg but you'll need to refactor the calibration_factor
+    Serial.println();
   }
 }
