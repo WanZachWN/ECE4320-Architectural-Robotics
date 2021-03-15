@@ -4,7 +4,7 @@
 #include "SD.h"
 #include "TMRpcm.h"
 #include "SPI.h"
-//#include "HX711.h
+#include "HX711.h"
 
 #define LED_STRIP_PIN  2       //Blue pin of the RGB LED
 #define LOADCELL_DOUT_PIN  3
@@ -17,6 +17,7 @@ CRGB leds[NUM_LEDS];
 TMRpcm tmrpcm;
 int i;
 uint8_t hue = 0;
+HX711 scale(DOUT, CLK);
 
 void setup() {
   // put your setup code here, to run once:
