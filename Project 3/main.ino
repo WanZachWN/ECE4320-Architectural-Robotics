@@ -17,6 +17,7 @@ int leftArmReading = 0;
 int rightArmReading = 0;
 int matReading = 0;
 int matMax = 0;
+int count = 0;
 //====================================================================================
 //state for each sensor
 int leftArmState = 0;
@@ -51,21 +52,30 @@ void loop() {
   MatSensor();
   ArmRestSensor();
   SeatSensor();
-  /*if(matState == 3 && armState == 0)
+  if(matState == 2 && armState == 0)
   {
     Serial.println("Stop increasing height");
     StopHeight();
   }
-  else if(matState == 2 && armState == 1)
+  else if(seatState == 0)
   {
-    Serial.println("Going Up");
-    HeightRiser();
+    if(matState == 2 && armState == 1)
+    {
+      Serial.println("Going Up");
+      HeightRiser();
+      count++;
+    }
   }
-  else if((matState == 0 && seatState == 0)&& armState == 0)
+  else if(matState == 0 && armState == 0)
   {
-    Serial.println("Going Down");
-    HeightLower();
-  }*/
+    if(count != 0)
+    {
+      Serial.println("Going Down");
+      HeightLower();
+      count--;
+    }
+  }
+  delay(500);
 }
 //====================================================================================
 void SeatSensor()
@@ -73,35 +83,59 @@ void SeatSensor()
   seatReading = analogRead(seatSensor);
   //Serial.print("Seat = ");
  // Serial.println(seatReading);
-  if(seatReading > 500)
+  if(seatReading > 200)
   {
     seatState = 1;
   }
+  else
+  {
+    seatState = 0;
+  }
+  Serial.print("Seat = ");
+  Serial.println(seatState);
 }
 //====================================================================================
 void ArmRestSensor()
 {
   leftArmReading = analogRead(leftArmRestSensor);
-  Serial.print("Left Arm = ");
-  Serial.println(leftArmReading);
-  if(leftArmReading > 500)
+  
+  if(leftArmReading > 70)
   {
     leftArmState = 1;
     delay(3000);
   }
-  
+  else
+  {
+    leftArmState = 0;
+  }
   rightArmReading = analogRead(rightArmRestSensor);
-  //Serial.print("Right Arm = ");
-  //Serial.println(rightArmReading);
-  if(rightArmReading > 500)
+  if(rightArmReading > 70)
   {
     rightArmState = 1;
   }
-
+  else
+  {
+    rightArmState = 0;
+  }
+  
   if(leftArmState == 1 && rightArmState == 1)
   {
     armState = 1;
   }
+  else
+  {
+    armState = 0; 
+  }
+  Serial.print("Left read = ");
+  Serial.println(leftArmReading);
+  Serial.print("Right read = ");
+  Serial.println(rightArmReading);
+  Serial.print("Left Arm = ");
+  Serial.println(leftArmState);
+  Serial.print("Right Arm = ");
+  Serial.println(rightArmState);
+  Serial.print("Arm = ");
+  Serial.println(armState);
 }
 //====================================================================================
 void MatSensor()
@@ -109,22 +143,32 @@ void MatSensor()
   matReading = analogRead(matSensor);
   //Serial.print("Mat = ");
   //Serial.println(matReading);
-  if(matReading > 500)
+  if(matReading != 0)
   {
     if(matState == 0)
     {
       matState = 1;
       matMax = matReading;
     }
-    else if(matReading >= (0.75*matMax))
-    {
-      matState = 3;
-    }
-    else if(matReading >= (0.45*matMax))
+    if(matReading >= (0.75*matMax))
     {
       matState = 2;
     }
+    else
+    {
+      matState = 1;
+    }
   }
+  else
+  {
+    matState = 0;
+  }
+  Serial.print("Mat = ");
+  Serial.println(matState);
+  Serial.print("Mat Reading = ");
+  Serial.println(matReading);
+  Serial.print("Mat Read = ");
+  Serial.println(matMax);
 }
 //====================================================================================
 void HeightRiser()
